@@ -1,0 +1,28 @@
+{
+  "name": "demo-application",
+  "version": "0.0.1",
+  "description": "The demo application for repositories brokers.",
+  "main": "brunch-config.js",
+  "scripts": {
+    "postinstall": "elm package install -y",
+    "start": "brunch watch --server",
+    "build": "brunch build --production"
+  },
+  "keywords": [
+    "elm"
+  ],
+  "author": "Evgeny Simonenko <easimonenko@mail.ru>",
+  "license": "BSD3",
+  "repository": {
+    "type": "git+https",
+    "url": "https://gitlab.com/severe-island/insight-project-team/demo-application.git"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "auto-reload-brunch": "^2.7.1",
+    "autoprefixer": "^7.1.6",
+    "brunch": "^2.8.2",
+    "elm-fancy-brunch": "^1.0.0",
+    "postcss-brunch": "^2.1.0"
+  }
+}

@@ -1,0 +1,41 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>The Demo Application for Repositories Brokers</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+  <script src="js/app.js"></script>
+  <script>
+    // Start Elm app in fullscreen mode
+    require('elm/Main.elm').Main.fullscreen(
+      {
+        "brokers": [
+          {
+            "vcsType": "git",
+            "vcsName": "Git",
+            "brokerPort": 3001
+          },
+          {
+            "vcsType": "hg",
+            "vcsName": "Mercurial",
+            "brokerPort": 3002
+          },
+          {
+            "vcsType": "svn",
+            "vcsName": "Subversion",
+            "brokerPort": 3003
+          }
+        ]
+      }
+    );
+
+    //Vanilla JS works too!
+    require('js/app.js').run();
+  </script>
+</body>
+
+</html>

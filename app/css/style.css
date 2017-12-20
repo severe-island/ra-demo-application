@@ -1,0 +1,32 @@
+body {
+  font-family: "sans-serif";
+}
+
+.title {
+  border-bottom: 1pt solid lightgray;
+  font-weight: 600;
+  margin: 5pt;
+  padding: 5pt;
+}
+
+.repository-register-form {
+  border: 1pt solid lightgray;
+  border-radius: 5pt;
+  margin: 5pt;
+  padding: 5pt;
+}
+
+.request-result {
+  border: 1pt solid gray;
+  border-radius: 5pt;
+  margin: 5pt;
+  padding: 5pt;
+}
+
+.attribute-title {
+  font-weight: 600;
+}
+
+.empty-attribute {
+  font-style: italic;
+}
