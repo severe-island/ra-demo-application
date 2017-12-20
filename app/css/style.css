@@ -9,11 +9,27 @@ body {
   padding: 5pt;
 }
 
-.repository-register-form {
+.repositories-requests {
   border: 1pt solid lightgray;
   border-radius: 5pt;
   margin: 5pt;
   padding: 5pt;
+}
+
+.repositories-requests div {
+  padding: 5pt;
+}
+
+.repository-fields {
+  border-bottom: 1pt solid lightgray;
+}
+
+.request-form {
+  border-bottom: 1pt solid lightgray;
+}
+
+.request-form:last-child {
+  border: none;
 }
 
 .request-result {
