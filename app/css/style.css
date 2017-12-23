@@ -10,7 +10,7 @@ body {
 }
 
 .repositories-requests {
-  border: 1pt solid lightgray;
+  border: 2pt solid lightgray;
   border-radius: 5pt;
   margin: 5pt;
   padding: 5pt;
@@ -33,10 +33,18 @@ body {
 }
 
 .request-result {
-  border: 1pt solid gray;
+  border: 2pt solid;
   border-radius: 5pt;
   margin: 5pt;
   padding: 5pt;
+}
+
+.request-result-fail {
+  border-color: red;
+}
+
+.request-result-succeed {
+  border-color: green;
 }
 
 .attribute-title {
