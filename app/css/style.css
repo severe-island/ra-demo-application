@@ -47,6 +47,10 @@ body {
   border-color: green;
 }
 
+.request-result-warn {
+  border-color: orange;
+}
+
 .attribute-title {
   font-weight: 600;
 }

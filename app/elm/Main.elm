@@ -76,10 +76,15 @@ type alias Broker =
 
 
 type RequestResult
-    = RequestResult API.Request (Result Http.Error String)
+    = RequestResult API.Request (Result String Answer)
+
+
+type alias Answer =
+    { status : String, reason : String }
 
 
 
+--type RequestSuccessResult = SimpleResult String | RepositoriesListResult {}
 -- Update
 
 
@@ -125,20 +130,29 @@ update msg model =
         RequestFail result ->
             ( { model
                 | requestsResults =
-                    (RequestResult result.request (Err result.error))
+                    (RequestResult result.request (Err <| toHumanReadable result.error))
                         :: model.requestsResults
               }
             , Cmd.none
             )
 
         RequestSucceed result ->
-            ( { model
-                | requestsResults =
-                    (RequestResult result.request (Ok result.message))
-                        :: model.requestsResults
-              }
-            , Cmd.none
-            )
+            let
+                decodedResult =
+                    decodeString
+                        (map2 Answer
+                            (field "status" string)
+                            (field "reason" string)
+                        )
+                        result.message
+            in
+                ( { model
+                    | requestsResults =
+                        (RequestResult result.request decodedResult)
+                            :: model.requestsResults
+                  }
+                , Cmd.none
+                )
 
         Request request ->
             case request of
@@ -417,8 +431,16 @@ view model =
                                     Err _ ->
                                         "request-result-fail"
 
-                                    Ok _ ->
-                                        "request-result-succeed"
+                                    Ok answer ->
+                                        case answer.status of
+                                            "success" ->
+                                                "request-result-succeed"
+
+                                            "warning" ->
+                                                "request-result-warn"
+
+                                            _ ->
+                                                "request-result-fail"
 
                         request =
                             case result of
@@ -435,6 +457,9 @@ view model =
                     in
                         div [ class styleClass ]
                             [ div []
+                                [ Html.span [ class "attribute-title" ] [ text <| (API.getRequestTitle request) ++ ": " ]
+                                ]
+                            , div []
                                 [ Html.span [ class "attribute-title" ] [ text "VCS Type: " ]
                                 , if String.isEmpty vcsType then
                                     Html.span [ class "empty-attribute" ] [ text "Not selected" ]
@@ -453,15 +478,21 @@ view model =
                                 , text <| buildRequestURL (getBrokerConfig model.flags (API.getVCSType request)) request
                                 ]
                             , div []
-                                [ Html.span [ class "attribute-title" ] [ text <| (API.getRequestTitle request) ++ ": " ]
-                                , text <|
-                                    case info of
-                                        Err err ->
-                                            toHumanReadable err
+                                (case info of
+                                    Err err ->
+                                        [ text err ]
 
-                                        Ok message ->
-                                            message
-                                ]
+                                    Ok answer ->
+                                        [ div []
+                                            [ Html.span [ class "attribute-title" ] [ text "Status: " ]
+                                            , text answer.status
+                                            ]
+                                        , div []
+                                            [ Html.span [ class "attribute-title" ] [ text "Reason: " ]
+                                            , text answer.reason
+                                            ]
+                                        ]
+                                )
                             ]
                 )
                 model.requestsResults
