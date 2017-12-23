@@ -333,83 +333,79 @@ view model =
                     , input [ onInput CommitIdInput ] []
                     ]
                 ]
-            , let
-                vcsType =
-                    model.selectedVCSType
+            , div [] <|
+                (let
+                    vcsType =
+                        model.selectedVCSType
 
-                request =
-                    API.RegisterRepositoryRequest
-                        { vcsType = vcsType
-                        , url = model.repositoryURL
-                        , login = model.login
-                        , password = model.password
-                        , repositoryId = model.repositoryId
-                        }
-              in
-                div [ class "request-form" ]
-                    [ div []
-                        [ Html.span [ class "attribute-title" ] [ text "Request: " ]
-                        , text
-                            ("POST "
-                                ++ buildRequestURL (getBrokerConfig model.flags model.selectedVCSType) request
-                                ++ "?url="
-                                ++ (model.repositoryURL |> nonEmpty |> Maybe.withDefault "_")
-                                ++ "&login="
-                                ++ (model.login |> nonEmpty |> Maybe.withDefault "_")
-                                ++ "&password="
-                                ++ (model.password |> secret |> nonEmpty |> Maybe.withDefault "_")
-                                ++ "&id="
-                                ++ (model.repositoryId |> nonEmpty |> Maybe.withDefault "_")
-                            )
+                    request =
+                        API.RegisterRepositoryRequest
+                            { vcsType = vcsType
+                            , url = model.repositoryURL
+                            , login = model.login
+                            , password = model.password
+                            , repositoryId = model.repositoryId
+                            }
+                 in
+                    div [ class "request-form" ]
+                        [ div []
+                            [ Html.span [ class "attribute-title" ] [ text "Request: " ]
+                            , text
+                                ("POST "
+                                    ++ buildRequestURL (getBrokerConfig model.flags model.selectedVCSType) request
+                                    ++ "?url="
+                                    ++ (model.repositoryURL |> nonEmpty |> Maybe.withDefault "_")
+                                    ++ "&login="
+                                    ++ (model.login |> nonEmpty |> Maybe.withDefault "_")
+                                    ++ "&password="
+                                    ++ (model.password |> secret |> nonEmpty |> Maybe.withDefault "_")
+                                    ++ "&id="
+                                    ++ (model.repositoryId |> nonEmpty |> Maybe.withDefault "_")
+                                )
+                            ]
+                        , div []
+                            [ button
+                                [ onClick <| Request request ]
+                                [ text "Register Repository" ]
+                            ]
                         ]
-                    , div []
-                        [ button
-                            [ onClick <| Request request ]
-                            [ text "Register Repository" ]
-                        ]
-                    ]
-            , buildRequestForm model
-                (API.RepositoriesListRequest
-                    { vcsType = model.selectedVCSType }
                 )
-                "Request Repositories List"
-            , buildRequestForm model
-                (API.RepositoryOverviewRequest
-                    { vcsType = model.selectedVCSType
-                    , repositoryId = model.repositoryId
-                    }
-                )
-                "Request Repository Overview"
-            , buildRequestForm model
-                (API.BranchesListRequest
-                    { vcsType = model.selectedVCSType
-                    , repositoryId = model.repositoryId
-                    }
-                )
-                "Request Branches List"
-            , buildRequestForm model
-                (API.BranchOverviewRequest
-                    { vcsType = model.selectedVCSType
-                    , repositoryId = model.repositoryId
-                    , branchId = model.branchId
-                    }
-                )
-                "Request Branch Overview"
-            , buildRequestForm model
-                (API.CommitsListRequest
-                    { vcsType = model.selectedVCSType
-                    , repositoryId = model.repositoryId
-                    }
-                )
-                "Request Commits List"
-            , buildRequestForm model
-                (API.CommitOverviewRequest
-                    { vcsType = model.selectedVCSType
-                    , repositoryId = model.repositoryId
-                    , commitId = model.commitId
-                    }
-                )
-                "Request Commit Overview"
+                    :: (let
+                            requests =
+                                [ API.RepositoriesListRequest
+                                    { vcsType = model.selectedVCSType }
+                                , API.RepositoryOverviewRequest
+                                    { vcsType = model.selectedVCSType
+                                    , repositoryId = model.repositoryId
+                                    }
+                                , API.BranchesListRequest
+                                    { vcsType = model.selectedVCSType
+                                    , repositoryId = model.repositoryId
+                                    }
+                                , API.BranchOverviewRequest
+                                    { vcsType = model.selectedVCSType
+                                    , repositoryId = model.repositoryId
+                                    , branchId = model.branchId
+                                    }
+                                , API.CommitsListRequest
+                                    { vcsType = model.selectedVCSType
+                                    , repositoryId = model.repositoryId
+                                    }
+                                , API.CommitOverviewRequest
+                                    { vcsType = model.selectedVCSType
+                                    , repositoryId = model.repositoryId
+                                    , commitId = model.commitId
+                                    }
+                                ]
+                        in
+                            List.map
+                                (\request ->
+                                    buildRequestForm model
+                                        request
+                                        ("Request " ++ API.getRequestTitle request)
+                                )
+                                requests
+                       )
             ]
         , div []
             (List.map
@@ -457,7 +453,8 @@ view model =
                                 , text <| buildRequestURL (getBrokerConfig model.flags (API.getVCSType request)) request
                                 ]
                             , div []
-                                [ text <|
+                                [ Html.span [ class "attribute-title" ] [ text <| (API.getRequestTitle request) ++ ": " ]
+                                , text <|
                                     case info of
                                         Err err ->
                                             toHumanReadable err

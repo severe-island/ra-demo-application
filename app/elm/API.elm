@@ -93,6 +93,31 @@ getVCSType request =
             params.vcsType
 
 
+getRequestTitle : Request -> String
+getRequestTitle request =
+    case request of
+        RegisterRepositoryRequest _ ->
+            "Register Repository"
+
+        RepositoriesListRequest _ ->
+            "Repositories List"
+
+        RepositoryOverviewRequest _ ->
+            "Repository Overview"
+
+        BranchesListRequest _ ->
+            "Branches List"
+
+        BranchOverviewRequest _ ->
+            "Branch Overview"
+
+        CommitsListRequest _ ->
+            "Commits List"
+
+        CommitOverviewRequest _ ->
+            "Commit Overview"
+
+
 buildRequestURL : Request -> String
 buildRequestURL request =
     case request of
