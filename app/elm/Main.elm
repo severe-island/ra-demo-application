@@ -142,18 +142,6 @@ update msg model =
 
         Request request ->
             case request of
-                API.BranchOverviewRequest params ->
-                    ( model, Cmd.none )
-
-                API.BranchesListRequest params ->
-                    ( model, Cmd.none )
-
-                API.CommitOverviewRequest params ->
-                    ( model, Cmd.none )
-
-                API.CommitsListRequest params ->
-                    ( model, Cmd.none )
-
                 API.RegisterRepositoryRequest params ->
                     ( model
                     , Task.attempt
@@ -165,10 +153,19 @@ update msg model =
                                 Ok msg ->
                                     RequestSucceed { request = request, message = msg }
                         )
-                        ((Http.toTask <| Http.post params.url Http.emptyBody string))
+                        ((Http.toTask <|
+                            Http.post
+                                (buildRequestURL
+                                    (getBrokerConfig model.flags (API.getVCSType request))
+                                    request
+                                )
+                                Http.emptyBody
+                                string
+                         )
+                        )
                     )
 
-                API.RepositoriesListRequest params ->
+                _ ->
                     ( model
                     , Task.attempt
                         (\result ->
@@ -179,11 +176,13 @@ update msg model =
                                 Ok msg ->
                                     RequestSucceed { request = request, message = msg }
                         )
-                        (Http.toTask <| Http.getString <| buildRequestURL (getBrokerConfig model.flags (API.getVCSType request)) request)
+                        (Http.toTask <|
+                            Http.getString <|
+                                buildRequestURL
+                                    (getBrokerConfig model.flags (API.getVCSType request))
+                                    request
+                        )
                     )
-
-                API.RepositoryOverviewRequest params ->
-                    ( model, Cmd.none )
 
 
 
@@ -352,7 +351,7 @@ view model =
                         [ Html.span [ class "attribute-title" ] [ text "Request: " ]
                         , text
                             ("POST "
-                                ++ API.buildRequestURL request
+                                ++ buildRequestURL (getBrokerConfig model.flags model.selectedVCSType) request
                                 ++ "?url="
                                 ++ (model.repositoryURL |> nonEmpty |> Maybe.withDefault "_")
                                 ++ "&login="
@@ -450,7 +449,7 @@ view model =
                                         |> Maybe.withDefault (text "Unknown")
                                 ]
                             , div []
-                                [ Html.span [ class "attribute-title" ] [ text "Request Type: " ]
+                                [ Html.span [ class "attribute-title" ] [ text "Request Method: " ]
                                 , text <| API.toString <| API.getRequestMethod request
                                 ]
                             , div []
