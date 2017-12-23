@@ -299,11 +299,11 @@ view model =
             [ div [ class "repository-fields" ]
                 [ div []
                     [ Html.span [ class "attribute-title" ] [ text "VCS Type: " ]
-                    , Html.select [] <|
-                        (option [ onClick <| VCSSelect "" ] [ text "" ])
+                    , Html.select [ onInput VCSSelect ] <|
+                        (option [ Html.Attributes.value "" ] [ text "" ])
                             :: (List.map
                                     (\broker ->
-                                        option [ onClick <| VCSSelect broker.vcsType ]
+                                        option [ Html.Attributes.value broker.vcsType ]
                                             [ text broker.vcsName ]
                                     )
                                     model.flags.brokers
