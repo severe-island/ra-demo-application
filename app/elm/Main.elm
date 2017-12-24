@@ -103,7 +103,7 @@ update msg model =
                                 decodeString
                                     (field "data"
                                         (Json.Decode.map4 API.RepositoryOverviewFields
-                                            (field "last_sych_date" int)
+                                            (field "last_sync_date" int)
                                             (field "repo_type" string)
                                             (field "url" string)
                                             (field "size" int)
