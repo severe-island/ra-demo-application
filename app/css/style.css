@@ -2,6 +2,14 @@ body {
   font-family: "sans-serif";
 }
 
+.attribute-title {
+  font-weight: 600;
+}
+
+.empty-attribute {
+  font-style: italic;
+}
+
 .title {
   border-bottom: 1pt solid lightgray;
   font-weight: 600;
@@ -39,6 +47,11 @@ body {
   padding: 5pt;
 }
 
+.request-result-data {
+  max-height: 120pt;
+  overflow: auto;
+}
+
 .request-result-fail {
   border-color: red;
 }
@@ -51,10 +64,9 @@ body {
   border-color: orange;
 }
 
-.attribute-title {
+.request-title {
+  border-bottom: 1pt solid lightgray;
   font-weight: 600;
-}
-
-.empty-attribute {
-  font-style: italic;
+  padding-bottom: 5pt;
+  margin-bottom: 5pt;
 }

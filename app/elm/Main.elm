@@ -1,18 +1,18 @@
 module Main exposing (main)
 
 import Html exposing (..)
-import Html.Attributes exposing (class)
-import Html.Events exposing (..)
 import Http
 import Json.Decode exposing (..)
-import List.Extra exposing (..)
-import String.Extra exposing (..)
 import Task
 
 
 -- Demo Application Modules
 
 import API
+import Model exposing (..)
+import Msg exposing (..)
+import Utils exposing (..)
+import View exposing (..)
 
 
 main : Program Flags Model Msg
@@ -44,61 +44,7 @@ init flags =
 
 
 
--- Model
-
-
-type alias Model =
-    { flags : Flags
-    , branchId : String
-    , commitId : String
-    , errorMessage : String
-    , login : String
-    , password : String
-    , repositoryId : String
-    , repositoryURL : String
-    , requestsResults : List RequestResult
-    , responseMessage : String
-    , selectedVCSType : String
-    }
-
-
-type alias Flags =
-    { brokers : List Broker }
-
-
-type alias Broker =
-    { vcsType : String
-    , vcsName : String
-    , protocol : String
-    , host : String
-    , brokerPort : Int
-    }
-
-
-type RequestResult
-    = RequestResult API.Request (Result String Answer)
-
-
-type alias Answer =
-    { status : String, reason : String }
-
-
-
---type RequestSuccessResult = SimpleResult String | RepositoriesListResult {}
 -- Update
-
-
-type Msg
-    = BranchIdInput String
-    | CommitIdInput String
-    | LoginInput String
-    | PasswordInput String
-    | RepositoryIdInput String
-    | URLInput String
-    | VCSSelect String
-    | Request API.Request
-    | RequestFail { request : API.Request, error : Http.Error }
-    | RequestSucceed { request : API.Request, message : String }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -130,7 +76,7 @@ update msg model =
         RequestFail result ->
             ( { model
                 | requestsResults =
-                    (RequestResult result.request (Err <| toHumanReadable result.error))
+                    (API.RequestResult result.request (Err <| toHumanReadable result.error))
                         :: model.requestsResults
               }
             , Cmd.none
@@ -138,17 +84,99 @@ update msg model =
 
         RequestSucceed result ->
             let
-                decodedResult =
-                    decodeString
-                        (map2 Answer
-                            (field "status" string)
-                            (field "reason" string)
+                status =
+                    decodeString (field "status" string) result.message
+
+                reason =
+                    decodeString (field "reason" string) result.message
+
+                data =
+                    case result.request of
+                        API.RepositoriesListRequest _ ->
+                            Result.map API.RepositoriesListData <|
+                                decodeString
+                                    (field "data" (list string))
+                                    result.message
+
+                        API.RepositoryOverviewRequest _ ->
+                            Result.map API.RepositoryOverviewData <|
+                                decodeString
+                                    (field "data"
+                                        (Json.Decode.map4 API.RepositoryOverviewFields
+                                            (field "last_sych_date" int)
+                                            (field "repo_type" string)
+                                            (field "url" string)
+                                            (field "size" int)
+                                        )
+                                    )
+                                    result.message
+
+                        API.BranchesListRequest _ ->
+                            Result.map API.BranchesListData <|
+                                decodeString
+                                    (field "data" (list string))
+                                    result.message
+
+                        API.BranchOverviewRequest _ ->
+                            Result.map API.BranchOverviewData <|
+                                decodeString
+                                    (field "data"
+                                        (Json.Decode.map4 API.BranchOverviewFields
+                                            (field "name" string)
+                                            (field "created_at" int)
+                                            (field "initial_commit" string)
+                                            (field "author" (nullable string))
+                                        )
+                                    )
+                                    result.message
+
+                        API.CommitsListRequest _ ->
+                            Result.map API.CommitsListData <|
+                                decodeString
+                                    (field "data" (list string))
+                                    result.message
+
+                        API.CommitOverviewRequest _ ->
+                            Result.map API.CommitOverviewData <|
+                                decodeString
+                                    (field "data"
+                                        (Json.Decode.map7 API.CommitOverviewFields
+                                            (field "committed_at" int)
+                                            (field "message" string)
+                                            (field "committer" string)
+                                            (field "negativeDelta" int)
+                                            (field "positiveDelta" int)
+                                            (field "branch" string)
+                                            (field "files"
+                                                (list
+                                                    (Json.Decode.map5 API.FileOverviewInCommitFields
+                                                        (field "size" int)
+                                                        (field "flag" string)
+                                                        (field "negativeDelta" int)
+                                                        (field "positiveDelta" int)
+                                                        (field "path" string)
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                    result.message
+
+                        _ ->
+                            Ok <| API.SimpleData ""
+
+                requestsAnswer =
+                    Result.map3
+                        (\statusValue reasonValue dataValue ->
+                            { status = statusValue, reason = reasonValue, data = Just dataValue }
                         )
-                        result.message
+                        status
+                        reason
+                        data
             in
                 ( { model
                     | requestsResults =
-                        (RequestResult result.request decodedResult)
+                        (API.RequestResult result.request requestsAnswer)
                             :: model.requestsResults
                   }
                 , Cmd.none
@@ -200,301 +228,9 @@ update msg model =
 
 
 
--- Utils
-
-
-toHumanReadable : Http.Error -> String
-toHumanReadable error =
-    "HTTP request error "
-        ++ case error of
-            Http.BadUrl info ->
-                "<BadUrl> " ++ info
-
-            Http.Timeout ->
-                "<Timeout>"
-
-            Http.NetworkError ->
-                "<NetworkError>"
-
-            Http.BadStatus response ->
-                "<BadStatus> "
-                    ++ "["
-                    ++ (response.status.code |> toString)
-                    ++ "] "
-                    ++ response.status.message
-
-            Http.BadPayload info _ ->
-                "<BadPayload> " ++ info
-
-
-buildRequestURL : Maybe Broker -> API.Request -> String
-buildRequestURL brokerConfig request =
-    getBrokerProtocol brokerConfig
-        ++ "://"
-        ++ getBrokerHost brokerConfig
-        ++ ":"
-        ++ getBrokerPort brokerConfig
-        ++ API.buildRequestURL request
-
-
-getBrokerConfig : Flags -> String -> Maybe Broker
-getBrokerConfig flags vcsType =
-    flags.brokers
-        |> List.Extra.find (\broker -> broker.vcsType == vcsType)
-
-
-getBrokerHost : Maybe Broker -> String
-getBrokerHost brokerConfig =
-    brokerConfig
-        |> Maybe.map .host
-        |> Maybe.withDefault "_"
-
-
-getBrokerPort : Maybe Broker -> String
-getBrokerPort brokerConfig =
-    brokerConfig
-        |> Maybe.map (toString << .brokerPort)
-        |> Maybe.withDefault "_"
-
-
-getBrokerProtocol : Maybe Broker -> String
-getBrokerProtocol brokerConfig =
-    brokerConfig
-        |> Maybe.map .protocol
-        |> Maybe.withDefault "_"
-
-
-
 -- Subscriptions
 
 
 subscriptions : Model -> Sub msg
 subscriptions _ =
     Sub.none
-
-
-
--- View
-
-
-secret : String -> String
-secret str =
-    String.repeat (String.length str) "*"
-
-
-buildRequestForm : Model -> API.Request -> String -> Html Msg
-buildRequestForm model request title =
-    let
-        vcsType =
-            model.selectedVCSType
-
-        url =
-            buildRequestURL (getBrokerConfig model.flags vcsType) request
-    in
-        div [ class "request-form" ]
-            [ div []
-                [ Html.span [ class "attribute-title" ] [ text "Request: " ]
-                , text
-                    ("GET " ++ url)
-                ]
-            , div []
-                [ button [ onClick <| Request request ] [ text title ]
-                ]
-            ]
-
-
-view : Model -> Html Msg
-view model =
-    div []
-        [ div [ class "title" ]
-            [ text "The Demo Application for Repositories Brokers" ]
-        , div [ class "repositories-requests" ]
-            [ div [ class "repository-fields" ]
-                [ div []
-                    [ Html.span [ class "attribute-title" ] [ text "VCS Type: " ]
-                    , Html.select [ onInput VCSSelect ] <|
-                        (option [ Html.Attributes.value "" ] [ text "" ])
-                            :: (List.map
-                                    (\broker ->
-                                        option [ Html.Attributes.value broker.vcsType ]
-                                            [ text broker.vcsName ]
-                                    )
-                                    model.flags.brokers
-                               )
-                    ]
-                , div []
-                    [ Html.span [ class "attribute-title" ] [ text "Repository URL: " ]
-                    , input [ onInput URLInput ] []
-                    ]
-                , div []
-                    [ Html.span [ class "attribute-title" ] [ text "Repository Login: " ]
-                    , input [ onInput LoginInput ] []
-                    ]
-                , div []
-                    [ Html.span [ class "attribute-title" ] [ text "Repository Password: " ]
-                    , input [ onInput PasswordInput ] []
-                    ]
-                , div []
-                    [ Html.span [ class "attribute-title" ] [ text "Repository Id: " ]
-                    , input [ onInput RepositoryIdInput ] []
-                    ]
-                , div []
-                    [ Html.span [ class "attribute-title" ] [ text "Branch Id: " ]
-                    , input [ onInput BranchIdInput ] []
-                    ]
-                , div []
-                    [ Html.span [ class "attribute-title" ] [ text "Commit Id: " ]
-                    , input [ onInput CommitIdInput ] []
-                    ]
-                ]
-            , div [] <|
-                (let
-                    vcsType =
-                        model.selectedVCSType
-
-                    request =
-                        API.RegisterRepositoryRequest
-                            { vcsType = vcsType
-                            , url = model.repositoryURL
-                            , login = model.login
-                            , password = model.password
-                            , repositoryId = model.repositoryId
-                            }
-                 in
-                    div [ class "request-form" ]
-                        [ div []
-                            [ Html.span [ class "attribute-title" ] [ text "Request: " ]
-                            , text
-                                ("POST "
-                                    ++ buildRequestURL (getBrokerConfig model.flags model.selectedVCSType) request
-                                    ++ "?url="
-                                    ++ (model.repositoryURL |> nonEmpty |> Maybe.withDefault "_")
-                                    ++ "&login="
-                                    ++ (model.login |> nonEmpty |> Maybe.withDefault "_")
-                                    ++ "&password="
-                                    ++ (model.password |> secret |> nonEmpty |> Maybe.withDefault "_")
-                                    ++ "&id="
-                                    ++ (model.repositoryId |> nonEmpty |> Maybe.withDefault "_")
-                                )
-                            ]
-                        , div []
-                            [ button
-                                [ onClick <| Request request ]
-                                [ text "Register Repository" ]
-                            ]
-                        ]
-                )
-                    :: (let
-                            requests =
-                                [ API.RepositoriesListRequest
-                                    { vcsType = model.selectedVCSType }
-                                , API.RepositoryOverviewRequest
-                                    { vcsType = model.selectedVCSType
-                                    , repositoryId = model.repositoryId
-                                    }
-                                , API.BranchesListRequest
-                                    { vcsType = model.selectedVCSType
-                                    , repositoryId = model.repositoryId
-                                    }
-                                , API.BranchOverviewRequest
-                                    { vcsType = model.selectedVCSType
-                                    , repositoryId = model.repositoryId
-                                    , branchId = model.branchId
-                                    }
-                                , API.CommitsListRequest
-                                    { vcsType = model.selectedVCSType
-                                    , repositoryId = model.repositoryId
-                                    }
-                                , API.CommitOverviewRequest
-                                    { vcsType = model.selectedVCSType
-                                    , repositoryId = model.repositoryId
-                                    , commitId = model.commitId
-                                    }
-                                ]
-                        in
-                            List.map
-                                (\request ->
-                                    buildRequestForm model
-                                        request
-                                        ("Request " ++ API.getRequestTitle request)
-                                )
-                                requests
-                       )
-            ]
-        , div []
-            (List.map
-                (\result ->
-                    let
-                        styleClass =
-                            "request-result "
-                                ++ case info of
-                                    Err _ ->
-                                        "request-result-fail"
-
-                                    Ok answer ->
-                                        case answer.status of
-                                            "success" ->
-                                                "request-result-succeed"
-
-                                            "warning" ->
-                                                "request-result-warn"
-
-                                            _ ->
-                                                "request-result-fail"
-
-                        request =
-                            case result of
-                                RequestResult request _ ->
-                                    request
-
-                        info =
-                            case result of
-                                RequestResult _ info ->
-                                    info
-
-                        vcsType =
-                            API.getVCSType request
-                    in
-                        div [ class styleClass ]
-                            [ div []
-                                [ Html.span [ class "attribute-title" ] [ text <| (API.getRequestTitle request) ++ ": " ]
-                                ]
-                            , div []
-                                [ Html.span [ class "attribute-title" ] [ text "VCS Type: " ]
-                                , if String.isEmpty vcsType then
-                                    Html.span [ class "empty-attribute" ] [ text "Not selected" ]
-                                  else
-                                    model.flags.brokers
-                                        |> List.Extra.find (\broker -> broker.vcsType == vcsType)
-                                        |> Maybe.map (text << .vcsName)
-                                        |> Maybe.withDefault (text "Unknown")
-                                ]
-                            , div []
-                                [ Html.span [ class "attribute-title" ] [ text "Request Method: " ]
-                                , text <| API.toString <| API.getRequestMethod request
-                                ]
-                            , div []
-                                [ Html.span [ class "attribute-title" ] [ text "Request URL: " ]
-                                , text <| buildRequestURL (getBrokerConfig model.flags (API.getVCSType request)) request
-                                ]
-                            , div []
-                                (case info of
-                                    Err err ->
-                                        [ text err ]
-
-                                    Ok answer ->
-                                        [ div []
-                                            [ Html.span [ class "attribute-title" ] [ text "Status: " ]
-                                            , text answer.status
-                                            ]
-                                        , div []
-                                            [ Html.span [ class "attribute-title" ] [ text "Reason: " ]
-                                            , text answer.reason
-                                            ]
-                                        ]
-                                )
-                            ]
-                )
-                model.requestsResults
-            )
-        ]

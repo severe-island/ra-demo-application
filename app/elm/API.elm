@@ -169,3 +169,57 @@ toString method =
 
         POST ->
             "POST"
+
+
+type alias Answer =
+    { status : String, reason : String, data : Maybe SuccessData }
+
+
+type alias BranchOverviewFields =
+    { name : String
+    , created_at : Int
+    , initial_commit : String
+    , author : Maybe String
+    }
+
+
+type alias FileOverviewInCommitFields =
+    { size : Int
+    , flag : String
+    , negativeDelta : Int
+    , positiveDelta : Int
+    , path : String
+    }
+
+
+type alias CommitOverviewFields =
+    { committed_at : Int
+    , message : String
+    , committer : String
+    , negativeDelta : Int
+    , positiveDelta : Int
+    , branch : String
+    , files : List FileOverviewInCommitFields
+    }
+
+
+type alias RepositoryOverviewFields =
+    { last_sync_date : Int
+    , repo_type : String
+    , url : String
+    , size : Int
+    }
+
+
+type SuccessData
+    = SimpleData String
+    | RepositoriesListData (List String)
+    | RepositoryOverviewData RepositoryOverviewFields
+    | BranchesListData (List String)
+    | BranchOverviewData BranchOverviewFields
+    | CommitsListData (List String)
+    | CommitOverviewData CommitOverviewFields
+
+
+type RequestResult
+    = RequestResult Request (Result String Answer)
