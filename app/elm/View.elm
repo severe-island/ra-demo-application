@@ -1,5 +1,6 @@
 module View exposing (..)
 
+import Date
 import Html exposing (..)
 import Html.Attributes exposing (class)
 import Html.Events exposing (..)
@@ -289,7 +290,7 @@ buildBranchOverviewDataView overview =
             ]
         , li []
             [ Html.span [ class "attribute-title" ] [ text "Created At: " ]
-            , text <| toString overview.created_at
+            , text <| toString <| Date.fromTime <| toFloat overview.created_at
             ]
         , li []
             [ Html.span [ class "attribute-title" ] [ text "Initial Commit: " ]
@@ -350,7 +351,7 @@ buildCommitOverviewDataView overview =
     ul [ class "request-result-data" ]
         [ li []
             [ Html.span [ class "attribute-title" ] [ text "Committed At: " ]
-            , text <| toString overview.committed_at
+            , text <| toString <| Date.fromTime <| toFloat overview.committed_at
             ]
         , li []
             [ Html.span [ class "attribute-title" ] [ text "Message: " ]
@@ -396,7 +397,7 @@ buildRepositoryOverviewDataView overview =
     ul [ class "request-result-data" ]
         [ li []
             [ Html.span [ class "attribute-title" ] [ text "Last Synchronization Date: " ]
-            , text <| toString overview.last_sync_date
+            , text <| toString <| Date.fromTime <| toFloat overview.last_sync_date
             ]
         , li []
             [ Html.span [ class "attribute-title" ] [ text "Repository Type: " ]
