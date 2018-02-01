@@ -1,7 +1,7 @@
 {
-    "version": "0.0.1",
+    "version": "0.1.0",
     "summary": "The demo application for repositories brokers.",
-    "repository": "https://github.com/severe-island/demo-application.git",
+    "repository": "https://github.com/severe-island/ra-demo-application.git",
     "license": "BSD3",
     "source-directories": [
         "app/elm"

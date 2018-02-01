@@ -1,6 +1,6 @@
 {
   "name": "demo-application",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "The demo application for repositories brokers.",
   "main": "brunch-config.js",
   "scripts": {
@@ -15,7 +15,7 @@
   "license": "BSD3",
   "repository": {
     "type": "git+https",
-    "url": "https://gitlab.com/severe-island/insight-project-team/demo-application.git"
+    "url": "https://github.com/severe-island/ra-demo-application.git"
   },
   "dependencies": {},
   "devDependencies": {

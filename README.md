@@ -4,6 +4,8 @@ The demo application for repositories brokers.
 
 ## Getting Started
 
+Firstly get and run <https://github.com/severe-island/ra-svn-broker>.
+
 ### Install
 
 ``` sh
