@@ -10,7 +10,6 @@ Firstly get and run <https://github.com/severe-island/ra-svn-broker>.
 
 ``` sh
 npm install
-npx elm-package install
 ```
 
 ### Run
@@ -31,7 +30,7 @@ Elm binaries can be found in `node_modules/.bin`, if you do not have Elm
 installed globally. With the latest npm you can run:
 
 ``` sh
-npx elm-package install <packageName>
+npx elm install <packageName>
 ```
 
 to install new packages. Alternatively, you could add scripts in

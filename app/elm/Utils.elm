@@ -1,37 +1,36 @@
-module Utils exposing (..)
-
-import Http
-import List.Extra
-
+module Utils exposing (buildRequestURL, getBrokerConfig, getBrokerHost, getBrokerPort, getBrokerProtocol, toHumanReadable)
 
 -- Demo Application Modules
 
 import API
+import Http
+import List.Extra
 import Model exposing (..)
 
 
 toHumanReadable : Http.Error -> String
 toHumanReadable error =
     "HTTP request error "
-        ++ case error of
-            Http.BadUrl info ->
-                "<BadUrl> " ++ info
+        ++ (case error of
+                Http.BadUrl info ->
+                    "<BadUrl> " ++ info
 
-            Http.Timeout ->
-                "<Timeout>"
+                Http.Timeout ->
+                    "<Timeout>"
 
-            Http.NetworkError ->
-                "<NetworkError>"
+                Http.NetworkError ->
+                    "<NetworkError>"
 
-            Http.BadStatus response ->
-                "<BadStatus> "
-                    ++ "["
-                    ++ (response.status.code |> toString)
-                    ++ "] "
-                    ++ response.status.message
+                Http.BadStatus response ->
+                    "<BadStatus> "
+                        ++ "["
+                        ++ (response.status.code |> String.fromInt)
+                        ++ "] "
+                        ++ response.status.message
 
-            Http.BadPayload info _ ->
-                "<BadPayload> " ++ info
+                Http.BadPayload info _ ->
+                    "<BadPayload> " ++ info
+           )
 
 
 buildRequestURL : Maybe Broker -> API.Request -> String
@@ -60,7 +59,7 @@ getBrokerHost brokerConfig =
 getBrokerPort : Maybe Broker -> String
 getBrokerPort brokerConfig =
     brokerConfig
-        |> Maybe.map (toString << .brokerPort)
+        |> Maybe.map (String.fromInt << .brokerPort)
         |> Maybe.withDefault "_"
 
 

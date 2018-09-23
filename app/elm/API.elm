@@ -1,4 +1,4 @@
-module API exposing (..)
+module API exposing (Answer, BranchOverviewFields, CommitOverviewFields, FileOverviewInCommitFields, Method(..), RepositoryOverviewFields, Request(..), RequestResult(..), SuccessData(..), buildRequestURL, getRequestMethod, getRequestTitle, getVCSType, toString)
 
 import String.Extra exposing (..)
 

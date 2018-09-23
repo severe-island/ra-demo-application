@@ -1,4 +1,4 @@
-module Model exposing (..)
+module Model exposing (Broker, Flags, Model)
 
 import API
 

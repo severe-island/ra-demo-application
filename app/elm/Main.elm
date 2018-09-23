@@ -1,23 +1,22 @@
 module Main exposing (main)
 
-import Html exposing (..)
-import Http
-import Json.Decode exposing (..)
-import Task
-
-
 -- Demo Application Modules
 
 import API
+import Browser
+import Html exposing (..)
+import Http
+import Json.Decode exposing (..)
 import Model exposing (..)
 import Msg exposing (..)
+import Task
 import Utils exposing (..)
 import View exposing (..)
 
 
 main : Program Flags Model Msg
 main =
-    Html.programWithFlags
+    Browser.document
         { init = init
         , update = update
         , subscriptions = subscriptions
@@ -76,7 +75,7 @@ update msg model =
         RequestFail result ->
             ( { model
                 | requestsResults =
-                    (API.RequestResult result.request (Err <| toHumanReadable result.error))
+                    API.RequestResult result.request (Err <| toHumanReadable result.error)
                         :: model.requestsResults
               }
             , Cmd.none
@@ -173,14 +172,15 @@ update msg model =
                         status
                         reason
                         data
+                        |> Result.mapError Json.Decode.errorToString
             in
-                ( { model
-                    | requestsResults =
-                        (API.RequestResult result.request requestsAnswer)
-                            :: model.requestsResults
-                  }
-                , Cmd.none
-                )
+            ( { model
+                | requestsResults =
+                    API.RequestResult result.request requestsAnswer
+                        :: model.requestsResults
+              }
+            , Cmd.none
+            )
 
         Request request ->
             case request of
@@ -192,10 +192,10 @@ update msg model =
                                 Err err ->
                                     RequestFail { request = request, error = err }
 
-                                Ok msg ->
-                                    RequestSucceed { request = request, message = msg }
+                                Ok m ->
+                                    RequestSucceed { request = request, message = m }
                         )
-                        ((Http.toTask <|
+                        (Http.toTask <|
                             Http.post
                                 (buildRequestURL
                                     (getBrokerConfig model.flags (API.getVCSType request))
@@ -203,7 +203,6 @@ update msg model =
                                 )
                                 Http.emptyBody
                                 string
-                         )
                         )
                     )
 
@@ -215,8 +214,8 @@ update msg model =
                                 Err err ->
                                     RequestFail { request = request, error = err }
 
-                                Ok msg ->
-                                    RequestSucceed { request = request, message = msg }
+                                Ok m ->
+                                    RequestSucceed { request = request, message = m }
                         )
                         (Http.toTask <|
                             Http.getString <|

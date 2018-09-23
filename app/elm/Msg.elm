@@ -1,11 +1,9 @@
-module Msg exposing (..)
-
-import Http
-
+module Msg exposing (Msg(..))
 
 -- Demo Application Modules
 
 import API
+import Http
 
 
 type Msg

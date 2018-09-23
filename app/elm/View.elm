@@ -1,18 +1,17 @@
-module View exposing (..)
-
-import Date
-import Html exposing (..)
-import Html.Attributes exposing (class)
-import Html.Events exposing (..)
-import List.Extra exposing (..)
-import String.Extra exposing (..)
-
+module View exposing (buildBranchOverviewDataView, buildBranchesListDataView, buildCommitOverviewDataView, buildCommitsListDataView, buildFilesOverviewsDataView, buildRepositoriesListDataView, buildRepositoryOverviewDataView, buildRequestForm, secret, view)
 
 -- Demo Application Modules
 
 import API
+import Browser
+import Html exposing (..)
+import Html.Attributes exposing (class)
+import Html.Events exposing (..)
+import List.Extra exposing (..)
 import Model exposing (..)
 import Msg exposing (..)
+import String.Extra exposing (..)
+import Time
 import Utils exposing (..)
 
 
@@ -30,77 +29,78 @@ buildRequestForm model request title =
         url =
             buildRequestURL (getBrokerConfig model.flags vcsType) request
     in
-        div [ class "request-form" ]
-            [ div []
-                [ Html.span [ class "attribute-title" ] [ text "Request: " ]
-                , text
-                    ("GET " ++ url)
-                ]
-            , div []
-                [ button [ onClick <| Request request ] [ text title ]
-                ]
+    div [ class "request-form" ]
+        [ div []
+            [ Html.span [ class "attribute-title" ] [ text "Request: " ]
+            , text
+                ("GET " ++ url)
             ]
+        , div []
+            [ button [ onClick <| Request request ] [ text title ]
+            ]
+        ]
 
 
-view : Model.Model -> Html Msg
+view : Model.Model -> Browser.Document Msg
 view model =
-    div []
-        [ div [ class "title" ]
-            [ text "The Demo Application for Repositories Brokers" ]
-        , div [ class "repositories-requests" ]
-            [ div [ class "repository-fields" ]
-                [ div []
-                    [ Html.span [ class "attribute-title" ] [ text "VCS Type: " ]
-                    , Html.select [ onInput VCSSelect ] <|
-                        (option [ Html.Attributes.value "" ] [ text "" ])
-                            :: (List.map
+    { title = ""
+    , body =
+        [ div []
+            [ div [ class "title" ]
+                [ text "The Demo Application for Repositories Brokers" ]
+            , div [ class "repositories-requests" ]
+                [ div [ class "repository-fields" ]
+                    [ div []
+                        [ Html.span [ class "attribute-title" ] [ text "VCS Type: " ]
+                        , Html.select [ onInput VCSSelect ] <|
+                            option [ Html.Attributes.value "" ] [ text "" ]
+                                :: List.map
                                     (\broker ->
                                         option [ Html.Attributes.value broker.vcsType ]
                                             [ text broker.vcsName ]
                                     )
                                     model.flags.brokers
-                               )
+                        ]
+                    , div []
+                        [ Html.span [ class "attribute-title" ] [ text "Repository URL: " ]
+                        , input [ onInput URLInput ] []
+                        ]
+                    , div []
+                        [ Html.span [ class "attribute-title" ] [ text "Repository Login: " ]
+                        , input [ onInput LoginInput ] []
+                        ]
+                    , div []
+                        [ Html.span [ class "attribute-title" ] [ text "Repository Password: " ]
+                        , input [ onInput PasswordInput ] []
+                        ]
+                    , div []
+                        [ Html.span [ class "attribute-title" ] [ text "Repository Id: " ]
+                        , input [ onInput RepositoryIdInput ] []
+                        ]
+                    , div []
+                        [ Html.span [ class "attribute-title" ] [ text "Branch Id: " ]
+                        , input [ onInput BranchIdInput ] []
+                        ]
+                    , div []
+                        [ Html.span [ class "attribute-title" ] [ text "Commit Id: " ]
+                        , input [ onInput CommitIdInput ] []
+                        ]
                     ]
-                , div []
-                    [ Html.span [ class "attribute-title" ] [ text "Repository URL: " ]
-                    , input [ onInput URLInput ] []
-                    ]
-                , div []
-                    [ Html.span [ class "attribute-title" ] [ text "Repository Login: " ]
-                    , input [ onInput LoginInput ] []
-                    ]
-                , div []
-                    [ Html.span [ class "attribute-title" ] [ text "Repository Password: " ]
-                    , input [ onInput PasswordInput ] []
-                    ]
-                , div []
-                    [ Html.span [ class "attribute-title" ] [ text "Repository Id: " ]
-                    , input [ onInput RepositoryIdInput ] []
-                    ]
-                , div []
-                    [ Html.span [ class "attribute-title" ] [ text "Branch Id: " ]
-                    , input [ onInput BranchIdInput ] []
-                    ]
-                , div []
-                    [ Html.span [ class "attribute-title" ] [ text "Commit Id: " ]
-                    , input [ onInput CommitIdInput ] []
-                    ]
-                ]
-            , div [] <|
-                (let
-                    vcsType =
-                        model.selectedVCSType
+                , div [] <|
+                    (let
+                        vcsType =
+                            model.selectedVCSType
 
-                    request =
-                        API.RegisterRepositoryRequest
-                            { vcsType = vcsType
-                            , url = model.repositoryURL
-                            , login = model.login
-                            , password = model.password
-                            , repositoryId = model.repositoryId
-                            }
-                 in
-                    div [ class "request-form" ]
+                        request =
+                            API.RegisterRepositoryRequest
+                                { vcsType = vcsType
+                                , url = model.repositoryURL
+                                , login = model.login
+                                , password = model.password
+                                , repositoryId = model.repositoryId
+                                }
+                     in
+                     div [ class "request-form" ]
                         [ div []
                             [ Html.span [ class "attribute-title" ] [ text "Request: " ]
                             , text
@@ -122,35 +122,35 @@ view model =
                                 [ text "Register Repository" ]
                             ]
                         ]
-                )
-                    :: (let
-                            requests =
-                                [ API.RepositoriesListRequest
-                                    { vcsType = model.selectedVCSType }
-                                , API.RepositoryOverviewRequest
-                                    { vcsType = model.selectedVCSType
-                                    , repositoryId = model.repositoryId
-                                    }
-                                , API.BranchesListRequest
-                                    { vcsType = model.selectedVCSType
-                                    , repositoryId = model.repositoryId
-                                    }
-                                , API.BranchOverviewRequest
-                                    { vcsType = model.selectedVCSType
-                                    , repositoryId = model.repositoryId
-                                    , branchId = model.branchId
-                                    }
-                                , API.CommitsListRequest
-                                    { vcsType = model.selectedVCSType
-                                    , repositoryId = model.repositoryId
-                                    }
-                                , API.CommitOverviewRequest
-                                    { vcsType = model.selectedVCSType
-                                    , repositoryId = model.repositoryId
-                                    , commitId = model.commitId
-                                    }
-                                ]
-                        in
+                    )
+                        :: (let
+                                requests =
+                                    [ API.RepositoriesListRequest
+                                        { vcsType = model.selectedVCSType }
+                                    , API.RepositoryOverviewRequest
+                                        { vcsType = model.selectedVCSType
+                                        , repositoryId = model.repositoryId
+                                        }
+                                    , API.BranchesListRequest
+                                        { vcsType = model.selectedVCSType
+                                        , repositoryId = model.repositoryId
+                                        }
+                                    , API.BranchOverviewRequest
+                                        { vcsType = model.selectedVCSType
+                                        , repositoryId = model.repositoryId
+                                        , branchId = model.branchId
+                                        }
+                                    , API.CommitsListRequest
+                                        { vcsType = model.selectedVCSType
+                                        , repositoryId = model.repositoryId
+                                        }
+                                    , API.CommitOverviewRequest
+                                        { vcsType = model.selectedVCSType
+                                        , repositoryId = model.repositoryId
+                                        , commitId = model.commitId
+                                        }
+                                    ]
+                            in
                             List.map
                                 (\request ->
                                     buildRequestForm model
@@ -158,50 +158,52 @@ view model =
                                         ("Request " ++ API.getRequestTitle request)
                                 )
                                 requests
-                       )
-            ]
-        , div []
-            (List.map
-                (\result ->
-                    let
-                        styleClass =
-                            "request-result "
-                                ++ case info of
-                                    Err _ ->
-                                        "request-result-fail"
-
-                                    Ok answer ->
-                                        case answer.status of
-                                            "success" ->
-                                                "request-result-succeed"
-
-                                            "warning" ->
-                                                "request-result-warn"
-
-                                            _ ->
+                           )
+                ]
+            , div []
+                (List.map
+                    (\result ->
+                        let
+                            styleClass =
+                                "request-result "
+                                    ++ (case info of
+                                            Err _ ->
                                                 "request-result-fail"
 
-                        request =
-                            case result of
-                                API.RequestResult request _ ->
-                                    request
+                                            Ok answer ->
+                                                case answer.status of
+                                                    "success" ->
+                                                        "request-result-succeed"
 
-                        info =
-                            case result of
-                                API.RequestResult _ info ->
-                                    info
+                                                    "warning" ->
+                                                        "request-result-warn"
 
-                        vcsType =
-                            API.getVCSType request
-                    in
+                                                    _ ->
+                                                        "request-result-fail"
+                                       )
+
+                            request =
+                                case result of
+                                    API.RequestResult r _ ->
+                                        r
+
+                            info =
+                                case result of
+                                    API.RequestResult _ i ->
+                                        i
+
+                            vcsType =
+                                API.getVCSType request
+                        in
                         div [ class styleClass ]
                             [ div [ class "request-title" ]
-                                [ Html.span [] [ text <| (API.getRequestTitle request) ]
+                                [ Html.span [] [ text <| API.getRequestTitle request ]
                                 ]
                             , div []
                                 [ Html.span [ class "attribute-title" ] [ text "VCS Type: " ]
                                 , if String.isEmpty vcsType then
                                     Html.span [ class "empty-attribute" ] [ text "Not selected" ]
+
                                   else
                                     model.flags.brokers
                                         |> List.Extra.find (\broker -> broker.vcsType == vcsType)
@@ -237,7 +239,7 @@ view model =
                                             Just data ->
                                                 div []
                                                     [ Html.span [ class "attribute-title" ] [ text "Data: " ]
-                                                    , (case data of
+                                                    , case data of
                                                         API.RepositoriesListData repositoriesList ->
                                                             buildRepositoriesListDataView repositoriesList
 
@@ -258,15 +260,16 @@ view model =
 
                                                         API.SimpleData s ->
                                                             text s
-                                                      )
                                                     ]
                                         ]
                                 )
                             ]
+                    )
+                    model.requestsResults
                 )
-                model.requestsResults
-            )
+            ]
         ]
+    }
 
 
 buildBranchesListDataView : List String -> Html Msg
@@ -281,6 +284,53 @@ buildBranchesListDataView branchesList =
             branchesList
 
 
+toEnglishMonth month =
+    case month of
+        Time.Jan ->
+            "Jan"
+
+        Time.Feb ->
+            "Feb"
+
+        Time.Mar ->
+            "Mar"
+
+        Time.Apr ->
+            "Apr"
+
+        Time.May ->
+            "May"
+
+        Time.Jun ->
+            "Jun"
+
+        Time.Jul ->
+            "Jul"
+
+        Time.Aug ->
+            "Aug"
+
+        Time.Sep ->
+            "Sep"
+
+        Time.Oct ->
+            "Oct"
+
+        Time.Nov ->
+            "Nov"
+
+        Time.Dec ->
+            "Dec"
+
+
+makeDate dt =
+    (String.fromInt <| Time.toYear Time.utc dt)
+        ++ " "
+        ++ (toEnglishMonth <| Time.toMonth Time.utc dt)
+        ++ " "
+        ++ (String.fromInt <| Time.toDay Time.utc dt)
+
+
 buildBranchOverviewDataView : API.BranchOverviewFields -> Html Msg
 buildBranchOverviewDataView overview =
     ul [ class "request-result-data" ]
@@ -290,7 +340,11 @@ buildBranchOverviewDataView overview =
             ]
         , li []
             [ Html.span [ class "attribute-title" ] [ text "Created At: " ]
-            , text <| toString <| Date.fromTime <| toFloat overview.created_at
+            , let
+                dt =
+                    Time.millisToPosix overview.created_at
+              in
+              text <| makeDate dt
             ]
         , li []
             [ Html.span [ class "attribute-title" ] [ text "Initial Commit: " ]
@@ -323,7 +377,7 @@ buildFilesOverviewsDataView filesList =
                 ul [ class "request-result-data" ]
                     [ li []
                         [ Html.span [ class "attribute-title" ] [ text "Committed At: " ]
-                        , text <| toString overview.size
+                        , text <| String.fromInt overview.size
                         ]
                     , li []
                         [ Html.span [ class "attribute-title" ] [ text "Flag: " ]
@@ -331,15 +385,15 @@ buildFilesOverviewsDataView filesList =
                         ]
                     , li []
                         [ Html.span [ class "attribute-title" ] [ text "Negative Delta: " ]
-                        , text <| toString overview.negativeDelta
+                        , text <| String.fromInt overview.negativeDelta
                         ]
                     , li []
                         [ Html.span [ class "attribute-title" ] [ text "Positive Delta: " ]
-                        , text <| toString overview.positiveDelta
+                        , text <| String.fromInt overview.positiveDelta
                         ]
                     , li []
                         [ Html.span [ class "attribute-title" ] [ text "Path: " ]
-                        , text <| toString overview.path
+                        , text overview.path
                         ]
                     ]
             )
@@ -351,7 +405,11 @@ buildCommitOverviewDataView overview =
     ul [ class "request-result-data" ]
         [ li []
             [ Html.span [ class "attribute-title" ] [ text "Committed At: " ]
-            , text <| toString <| Date.fromTime <| toFloat overview.committed_at
+            , let
+                dt =
+                    Time.millisToPosix overview.committed_at
+              in
+              text <| makeDate dt
             ]
         , li []
             [ Html.span [ class "attribute-title" ] [ text "Message: " ]
@@ -363,11 +421,11 @@ buildCommitOverviewDataView overview =
             ]
         , li []
             [ Html.span [ class "attribute-title" ] [ text "Negative Delta: " ]
-            , text <| toString overview.negativeDelta
+            , text <| String.fromInt overview.negativeDelta
             ]
         , li []
             [ Html.span [ class "attribute-title" ] [ text "Positive Delta: " ]
-            , text <| toString overview.positiveDelta
+            , text <| String.fromInt overview.positiveDelta
             ]
         , li []
             [ Html.span [ class "attribute-title" ] [ text "Branch: " ]
@@ -397,7 +455,11 @@ buildRepositoryOverviewDataView overview =
     ul [ class "request-result-data" ]
         [ li []
             [ Html.span [ class "attribute-title" ] [ text "Last Synchronization Date: " ]
-            , text <| toString <| Date.fromTime <| toFloat overview.last_sync_date
+            , let
+                dt =
+                    Time.millisToPosix overview.last_sync_date
+              in
+              text <| makeDate dt
             ]
         , li []
             [ Html.span [ class "attribute-title" ] [ text "Repository Type: " ]
@@ -409,6 +471,6 @@ buildRepositoryOverviewDataView overview =
             ]
         , li []
             [ Html.span [ class "attribute-title" ] [ text "Size: " ]
-            , text <| toString overview.size
+            , text <| String.fromInt overview.size
             ]
         ]
